@@ -99,8 +99,8 @@ class PlotData:
 
 #設定FIR濾波器套用的陣列b
 b=[1]
-for i in range(2,21):    
-    a=np.array([1,-(np.exp(1j*0.05*i*np.pi)+np.exp(-1j*0.05*i*np.pi)),1])     #從0.1pi開始，每0.5pi產生一個零點
+for i in range(2,21):                                        #從0.1pi開始，每0.5pi產生一個零點
+    a=np.array([1,-(np.exp(1j*0.05*i*np.pi)+np.exp(-1j*0.05*i*np.pi)),1])     
     b=np.array(np.convolve(b,a))
 
 #繪製fig1:z-domain圖
