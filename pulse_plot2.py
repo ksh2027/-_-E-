@@ -84,7 +84,7 @@ def job():                          #子執行緒跑的副程式，將tkinter相
 
 #主執行緒
 t = threading.Thread(target = job)
-t.start()                                        #開始子執行緒
+t.start()                                                     #開始子執行緒
 
 #Display loading 
 class PlotData:
@@ -172,23 +172,23 @@ while True:
             y_fir =signal.lfilter(b/np.sum(abs(b)), 1, y_mid)   #FIR低通濾波器
             y2f = np.fft.fftshift(np.fft.fft(y_fir))
             
-            for i in range(0,4):                                #每5筆資料找尋斜率變換位置
-                if (y_fir[496+i]-y_fir[495+i]) <0 :
-                    
-                    if slope==1:                                #斜率由正轉負時(波峰)
-                        wave=time_point-past_time_point         #wave:上一個波峰到這一個波峰的時間差(即時心跳週期)
-                        past_time_point = time_point
-                        if wave!=0 and (60/wave)<150 and (60/wave)>40:        #每分鐘心率過濾在40到150之間
-                            heartrate=round(60*1/wave)
-                            if (H==1) and len(HRV)<10 and (abs(wave-np.mean(HRV))<0.15 or len(HRV)==0): #'計算HRV'按鈕執行，HRV過濾在150ms以內
-                                HRV.append(wave)
-                            
-                    slope=-1            
-                elif (y_fir[496+i]-y_fir[495+i]) >0 :
-                    slope=1
-                    time_point = PData.axis_x[496]
-                else :
-                    slope=0 
+            #找尋斜率變換位置                   
+            if (y_fir[499]-y_fir[498]) <0 :                 
+                
+                if slope==1:                                #斜率由正轉負時(波峰)
+                    wave=time_point-past_time_point         #wave:上一個波峰到這一個波峰的時間差(即時心跳週期)
+                    past_time_point = time_point
+                    if wave!=0 and (60/wave)<150 and (60/wave)>40:        #每分鐘心率過濾在40到150之間
+                        heartrate=round(60*1/wave)
+                        if (H==1) and len(HRV)<10 and (abs(wave-np.mean(HRV))<0.15 or len(HRV)==0): #'計算HRV'按鈕執行，HRV過濾在150ms以內
+                            HRV.append(wave)
+
+                slope=-1            
+            elif (y_fir[499]-y_fir[498]) >0 :
+                slope=1
+                time_point = PData.axis_x[499]
+            else :
+                slope=0 
         
         
         ax1.set_xlim(PData.axis_x[0], PData.axis_x[0]+5)
