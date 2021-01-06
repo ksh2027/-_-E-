@@ -54,7 +54,7 @@ def job():                          #子執行緒跑的副程式，將tkinter相
                 text2.insert("insert",len(HRV))    
                 text2.insert("insert","/10")
                 root.after(100,HRVmeasure)
-    #'end'按鈕指令
+    #'結束程式'按鈕指令
     def end():
         global K
         root.quit()   
@@ -63,12 +63,12 @@ def job():                          #子執行緒跑的副程式，將tkinter相
     #tkinter視窗介面設定    
     root = tk.Tk()                   
     root.title('心率量測')
-    root.geometry('600x720')
+    root.geometry('600x600')
     bt_start = tk.Button(root, text='開始量測', command=startmeasure,height = 5,width = 15,font=100)
     bt_FIR = tk.Button(root, text='FIR濾波', command=startFIR,height = 5,width = 15,font=100)
     bt_heart = tk.Button(root, text='顯示即時心率', command=heartmeasure,height = 5,width = 15,font=100)
     bt_HRV = tk.Button(root, text='計算HRV', command=HRVmeasure,height = 5,width = 15,font=100)
-    bt_end = tk.Button(root, text='end', command=end,height = 5,width = 15,font=100)
+    bt_end = tk.Button(root, text='結束程式', command=end,height = 5,width = 15,font=100)
     text1 = tk.Text(root,width=10, height=1)
     text1.configure(font=100)
     text2 = tk.Text(root,width=10, height=1)
@@ -99,7 +99,7 @@ class PlotData:
 
 #設定FIR濾波器套用的陣列b
 b=[1]
-for i in range(2,21):                                        #從0.1pi到pi之間，每0.05pi產生一個零點
+for i in range(2,21):                                        #從0.1pi到pi之間，每0.05pi產生一個零點，共產生38個零點
     a=np.array([1,-(np.exp(1j*0.05*i*np.pi)+np.exp(-1j*0.05*i*np.pi)),1])     
     b=np.array(np.convolve(b,a))
 
@@ -144,7 +144,7 @@ ser.flush()
 
 start = time.time()
 
-x=np.linspace(-250,250,500)              #頻譜橫軸以頻率為單位表示
+x=np.linspace(-250,249,500)              #頻譜橫軸以頻率為單位表示
 
 #各式參數宣告
 past_time_point=0
@@ -166,37 +166,37 @@ while True:
                 pass
 
         if(len(PData.axis_y1)==500):                            #存入500筆資料後才可進行傅立葉轉換頻譜、濾波、心率量測等功能
-            y1f = np.fft.fftshift(np.fft.fft(PData.axis_y))
+            y1f = np.fft.fftshift(np.fft.fft(PData.axis_y1))     #傅立葉轉換後將範圍調整至[-250, 249]
 
-            y_mid=signal.medfilt(PData.axis_y1,3)               #3點中值濾波器
-            y_fir =signal.lfilter(b/np.sum(abs(b)), 1, y_mid)   #FIR低通濾波器
+            #y_mid=signal.medfilt(PData.axis_y1,3)               #3點中值濾波器
+            y_fir =signal.lfilter(b/np.sum(abs(b)), 1, PData.axis_y1)   #FIR低通濾波器
             y2f = np.fft.fftshift(np.fft.fft(y_fir))
             
-            #找尋斜率變換位置                   
-            if (y_fir[499]-y_fir[498]) <0 :                 
-                
-                if slope==1:                                #斜率由正轉負時(波峰)
-                    wave=time_point-past_time_point         #wave:上一個波峰到這一個波峰的時間差(即時心跳週期)
-                    past_time_point = time_point
-                    if wave!=0 and (60/wave)<150 and (60/wave)>40:        #每分鐘心率過濾在40到150之間
-                        heartrate=round(60*1/wave)
-                        if (H==1) and len(HRV)<10 and (abs(wave-np.mean(HRV))<0.15 or len(HRV)==0): #'計算HRV'按鈕執行，HRV過濾在150ms以內
-                            HRV.append(wave)
-
-                slope=-1            
-            elif (y_fir[499]-y_fir[498]) >0 :
-                slope=1
-                time_point = PData.axis_x[499]
-            else :
-                slope=0 
+            for i in range(0,9):                                #從最後10筆資料找尋斜率變換位置
+                if (y_fir[491+i]-y_fir[490+i]) <0 :
+                    
+                    if slope==1:                                #斜率由正轉負時(波峰)
+                        wave=time_point-past_time_point         #wave:上一個波峰到這一個波峰的時間差(即時心跳週期)
+                        past_time_point = time_point
+                        if wave!=0 and (60/wave)<150 and (60/wave)>40:        #每分鐘心率過濾在40到150之間
+                            heartrate=round(60*1/wave)
+                            if (H==1) and len(HRV)<10 and (abs(wave-np.mean(HRV))<0.15 or len(HRV)==0): #'計算HRV'按鈕執行，取十個心跳計算HRV
+                                HRV.append(wave)                                                        
+                            
+                    slope=-1            
+                elif (y_fir[491+i]-y_fir[490+i]) >0 :
+                    slope=1
+                    time_point = PData.axis_x[491+i]
+                else :
+                    slope=0 
         
         
         ax1.set_xlim(PData.axis_x[0], PData.axis_x[0]+5)
-        ax2.set_xlim(-250, 250)
+        ax2.set_xlim(-250, 249)
 
         if F==1:                                                #'FIR濾波'按鈕執行   
             ax3.set_xlim(PData.axis_x[0], PData.axis_x[0]+5)
-            ax4.set_xlim(-250, 250)
+            ax4.set_xlim(-250, 249)
 
         ax1.set_title("Original signal")
         ax2.set_title("Spectrum of original signal")
@@ -217,7 +217,7 @@ while True:
 
         fig2.canvas.draw()
         fig2.canvas.flush_events()      
-    elif K==-1:                                                 #'end'按鈕執行
+    elif K==-1:                                                 #'結束程式'按鈕執行
         plt.close(fig1)
         plt.close(fig2)
         break
